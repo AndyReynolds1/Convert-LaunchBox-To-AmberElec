@@ -15,6 +15,7 @@ $systemToFolders = @{
 	"Commodore Amiga"						= "amiga";
 	"MAME"									= "mame";
 	"Nintendo 64" 							= "n64";
+	"Nintendo DS"							= "nds";
 	"Nintendo Game Boy" 					= "gb";
 	"Nintendo Game Boy Color"				= "gbc";
 	"Nintendo Game Boy Advance"				= "gba";
@@ -23,6 +24,8 @@ $systemToFolders = @{
 	"Sega Game Gear"						= "gamegear";
 	"Sega Genesis"							= "megadrive";
 	"SNK Neo Geo Pocket Color"				= "ngpc";
+	"Sony Playstation"						= "psx";
+	"Sony PSP"								= "psp";
 	"Super Nintendo Entertainment System" 	= "snes";
 }
 
@@ -98,10 +101,10 @@ function ConvertXmlFile
 			$XmlObjectWriter.WriteElementString("releasedate",(ConvertDateTime $game.ReleaseDate))
 		}
 		if (($game.AndroidBoxFrontThumbPath -ne $null) -and ($game.AndroidBoxFrontThumbPath -ne "")) {
-			$XmlObjectWriter.WriteElementString("thumbnail",(CopyBoxImage $game.AndroidBoxFrontThumbPath $systemFolder))
+			$XmlObjectWriter.WriteElementString("thumbnail",(CopyImage $game.AndroidBoxFrontThumbPath $systemFolder "box"))
 		}
 		if (($game.AndroidGameplayScreenshotThumbPath -ne $null) -and ($game.AndroidGameplayScreenshotThumbPath -ne "")) {
-			$XmlObjectWriter.WriteElementString("image",(CopyScreenshotImage $game.AndroidGameplayScreenshotThumbPath $systemFolder))
+			$XmlObjectWriter.WriteElementString("image",(CopyImage $game.AndroidGameplayScreenshotThumbPath $systemFolder "screenshot"))
 		}
 		if (($game.AndroidVideoPath -ne $null) -and ($game.AndroidVideoPath -ne "")) {
 			$XmlObjectWriter.WriteElementString("video",(CopyVideoFile $game.AndroidVideoPath $systemFolder))
@@ -142,47 +145,27 @@ function CopyGameFile
 	$pathParts = $file.split("/")
 	
 	# Copy video file to system folder
-	Copy-Item -Path "$($launchBoxExportRoot)\$($file)" -Destination "$($outputFolderRoot)\$($systemFolder)\$($pathParts[2])"
+	Copy-Item -literalpath "$($launchBoxExportRoot)\$($file)" -Destination "$($outputFolderRoot)\$($systemFolder)\$($pathParts[2])"
 	
 	return "./$($pathParts[2])"
 }
 
-function CopyBoxImage
+function CopyImage
 (
 	[string]$file,
-	[string]$systemFolder
+	[string]$systemFolder,
+	[string]$imageType
 ){
-	if ((Test-Path "$($launchBoxExportRoot)\$($file)") -eq $false) {
-		Write-Warning "BOX IMAGE NOT FOUND!"
+	if ((Test-Path -literalpath "$($launchBoxExportRoot)\$($file)") -eq $false) {
+		Write-Warning "$($imageType.ToUpper()) IMAGE NOT FOUND!"
 		return $null
 	} else {
 		
 		$pathParts = $file.split("/")
-		$fileNameParts = $pathParts[3].split(".")
-		
-		$newFileName = "$($fileNameParts[0])-box.$($fileNameParts[1])"
-		
-		# Copy video file to system folder
-		Copy-Item -Path "$($launchBoxExportRoot)\$($file)" -Destination "$($outputFolderRoot)\$($systemFolder)\images\$($newFileName)"
-		
-		return "./images/$($newFileName)"
-	}
-}
+		$filename = $pathParts[3].Substring(0,$pathParts[3].LastIndexOf("."))
+		$fileExtension = $pathParts[3].Substring($pathParts[3].LastIndexOf(".")+1)
 
-function CopyScreenshotImage
-(
-	[string]$file,
-	[string]$systemFolder
-){
-	if ((Test-Path "$($launchBoxExportRoot)\$($file)") -eq $false) {
-		Write-Warning "SCREENSHOT IMAGE NOT FOUND!"
-		return $null
-	} else {
-	
-		$pathParts = $file.split("/")
-		$fileNameParts = $pathParts[3].split(".")
-		
-		$newFileName = "$($fileNameParts[0])-screenshot.$($fileNameParts[1])"
+		$newFileName = "$($filename)-$($imageType).$($fileExtension)"
 		
 		# Copy video file to system folder
 		Copy-Item -Path "$($launchBoxExportRoot)\$($file)" -Destination "$($outputFolderRoot)\$($systemFolder)\images\$($newFileName)"
@@ -196,7 +179,7 @@ function CopyVideoFile
 	[string]$file,
 	[string]$systemFolder
 ){
-	if ((Test-Path "$($launchBoxExportRoot)\$($file)") -eq $false) {
+	if ((Test-Path -literalpath "$($launchBoxExportRoot)\$($file)") -eq $false) {
 		Write-Warning "VIDEO NOT FOUND!"
 		return $null
 	} else {
